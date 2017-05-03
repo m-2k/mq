@@ -18,19 +18,19 @@ event(chat) ->
     User = n2o:user(),
     Message = n2o:q(message),
     Room = code(),
-    io:format("Chat pressed: ~p ~p~n",[Room,self()]),
+    io:format("Chat pressed: ~p ~p ~p~n",[User,Room,self()]),
     kvs:add(#entry{id=kvs:next_id("entry",1),
                    from=n2o:user(),feed_id={room,Room},media=Message}),
-    Msg = emqttd_message:make(Room, 0, Room, term_to_binary(#client{data={User,Message}})),
-    self() ! {deliver, Msg};
+    % Msg = emqttd_message:make(Room, 0, Room, term_to_binary(#client{data={User,Message}})),
+    % self() ! {deliver, Msg},
+    % [];
+    event(#client{data={User,Message}});
 
 event(#client{data={User,Message}}) ->
-     nitro:wire(#jq{target=message,method=[focus,select]}),
-     HTML = nitro:to_list(Message),
-     DTL = #dtl{file="message",
-                app=review,
-                bindings=[{user,User},{color,"gray"},{message,HTML}]},
-     nitro:insert_top(history, nitro:jse(nitro:render(DTL)));
+    nitro:wire(#jq{target=message,method=[focus,select]}),
+    HTML = nitro:to_list(Message),
+    DTL = #dtl{file="message",app=review,bindings=[{user,User},{color,"gray"},{message,HTML}]},
+    nitro:insert_top(history, nitro:jse(nitro:render(DTL)));
 
 event(#ftp{sid=Sid,filename=Filename,status={event,stop}}=Data) ->
     io:format("FTP Delivered ~p~n",[Data]),
